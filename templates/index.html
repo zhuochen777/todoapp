@@ -28,6 +28,7 @@
         {% for d in data: %}
         <li><input class="check-completed" data-id="{{ d.id }}" type="checkbox" {% if d.completed %} checked {% endif %}>{{ d.description }}</li>
         {% endfor %}
+        <!-- value of data-id can be found in event.target.dataset["id"] -->
     </ul>
     <script>
         const checkboxes = document.getElementsByClassName("check-completed");

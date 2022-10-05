@@ -64,6 +64,7 @@ def set_completed_todo(todoId):
 @app.route("/")
 def index():
     return render_template("index.html", data=Todo.query.order_by("id").all())
+    # order_by("id") so that records are listed by id even after webpage refreshes
 
 
 if __name__=="__main__":
