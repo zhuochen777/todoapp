@@ -13,16 +13,28 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
 # create Todo table model
+# child model
 class Todo(db.Model):
     __tablename__ = "todos"
     id = db.Column(db.Integer, primary_key = True)
     description = db.Column(db.String(), nullable = False)
     completed = db.Column(db.Boolean, nullable = False, default = False)
+    list_id = db.Column(db.Integer, db.ForeignKey("todolists.id"), nullable = False)
+    # set up foreign key constraint on child model, list_id - some parent id, "todolists.id" - "parentTableName.primaryKey"
+
 
     def __repr__(self):
         return f"<Todo {self.id} is {self.description}>"
 
-# db.create_all()
+# parent model
+class TodoList(db.Model):
+    __tablename__ = "todolists"
+    id = db.Column(db.Integer, primary_key = True)
+    name = db.Column(db.String(), nullable = False)
+    todos = db.relationship("Todo", backref = "list", lazy = True)
+    # todos - name of the children (plural), "Todo" - name of child class, name of the backref returns the parent object that child object belongs to
+
+#db.create_all()
 
 # create a route that listens request to todos/create with post method
 @app.route("/todos/create", methods=["POST"])
