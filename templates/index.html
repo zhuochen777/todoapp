@@ -51,7 +51,23 @@
       <ul id="lists">
         {% for list in lists %}
         <li>
+          <input
+            type="checkbox"
+            class="list-completed"
+            data-id="{{ list.id }}"
+            {%
+            if
+            list.completed
+            %}
+            checked
+            {%
+            endif
+            %}
+          />
           <a href="/lists/{{ list.id }}">{{ list.name }}</a>
+          <button class="delete-list-btn" data-id="{{ list.id }}">
+            &cross;
+          </button>
         </li>
         {% endfor %}
       </ul>
@@ -82,7 +98,7 @@
             %}
           />
           {{ todo.description }}
-          <button class="delete-btn" data-id="{{ todo.id}}">&cross;</button>
+          <button class="delete-btn" data-id="{{ todo.id }}">&cross;</button>
         </li>
         {% endfor %}
         <!-- value of data-id can be found in event.target.dataset["id"] -->
@@ -111,6 +127,29 @@
         };
       }
 
+      // delete list item
+      const listdeleteButtons = document.getElementsByClassName("delete-list-btn");
+      for (let i = 0; i < listdeleteButtons.length; i++) {
+        const listdeleteButton = listdeleteButtons[i];
+        listdeleteButton.onclick = function(event) {
+            console.log("event", event);
+            const listId = event.target.dataset["id"];
+            fetch("/lists/" + listId + "/delete", {
+                method: "DELETE"
+            })
+            .then(function() {
+                const item = event.target.parentElement;
+                item.remove();
+                document.getElementById("error").className = "hidden";
+                window.location.reload(true);
+            })
+            .catch(function() {
+                document.getElementById("error").className = "";
+            })
+        }
+
+      }
+
       //   update completed item
       const checkboxes = document.getElementsByClassName("check-completed");
       for (let i = 0; i < checkboxes.length; i++) {
@@ -130,6 +169,33 @@
           })
             .then(function () {
               document.getElementById("error").className = "hidden";
+            })
+            .catch(function () {
+              document.getElementById("error").className = "";
+            });
+        };
+      }
+
+      //   update completed list
+      const list_checkboxes = document.getElementsByClassName("list-completed");
+      for (let i = 0; i < list_checkboxes.length; i++) {
+        const list_checkbox = list_checkboxes[i];
+        list_checkbox.onclick = function (event) {
+          console.log("event", event);
+          const list_completed = event.target.checked;
+          const todoListId = event.target.dataset["id"];
+          fetch("/lists/" + todoListId + "/set-completed", {
+            method: "POST",
+            body: JSON.stringify({
+              list_completed: list_completed,
+            }),
+            headers: {
+              "Content-Type": "application/json",
+            },
+          })
+            .then(function () {
+              document.getElementById("error").className = "hidden";
+              window.location.reload(true);
             })
             .catch(function () {
               document.getElementById("error").className = "";

@@ -32,6 +32,7 @@ class TodoList(db.Model):
     __tablename__ = "todolists"
     id = db.Column(db.Integer, primary_key = True)
     name = db.Column(db.String(), nullable = False)
+    completed = db.Column(db.Boolean, nullable = False, default = False)
     todos = db.relationship("Todo", backref = "list", lazy = True)
     # todos - name of the children (plural), "Todo" - name of child class, name of the backref returns the parent object that child object belongs to
 
@@ -68,29 +69,39 @@ def create_todo():
 # update todo item
 @app.route("/todos/<todoId>/set-completed", methods=["POST"])
 def set_completed_todo(todoId):
+    error = False
     try:
         completed = request.get_json()["completed"]
         todo = Todo.query.get(todoId)
         todo.completed = completed
         db.session.commit()
     except:
+        error = True
         db.session.rollback()
     finally:
         db.session.close()
-    return redirect(url_for("index"))
+    if not error:
+        return redirect(url_for("index"))
+    else:
+        abort(500)
 
 # delete todo item
 @app.route("/todos/<todoId>/delete", methods=["DELETE"])
 def delete_todo(todoId):
+    error = False
     try:
         todo = Todo.query.get(todoId)
         db.session.delete(todo)
         db.session.commit()
     except:
+        error = True
         db.session.rollback()
     finally:
         db.session.close()
-    return jsonify({"success": True})
+    if not error:
+        return jsonify({"success": True})
+    else:
+        abort(500)
 
 # home route
 @app.route("/")
@@ -101,7 +112,7 @@ def index():
 @app.route("/lists/<list_id>")
 def get_list_todo(list_id):
     return render_template("index.html",
-    lists = TodoList.query.all(),
+    lists = TodoList.query.order_by("id").all(),
     active_list = TodoList.query.get(list_id),
     todos = Todo.query.filter_by(list_id = list_id).order_by("id").all())
     # order_by("id") so that records are listed by id even after webpage refreshes
@@ -109,6 +120,7 @@ def get_list_todo(list_id):
 # create list item
 @app.route("/lists/create", methods=["POST"])
 def create_list():
+    error = False
     body = {}
     try:
         listname = request.get_json()["name"]
@@ -117,11 +129,53 @@ def create_list():
         db.session.commit()
         body["name"] = list.name
     except:
+        error = True
         db.session.rollback()
     finally:
         db.session.close()
+    if not error:
         return jsonify(body)
+    else:
+        abort(500)
 
+# update list item
+@app.route("/lists/<list_id>/set-completed", methods=["POST"])
+def set_completed_list(list_id):
+    error = False
+    try:
+        completed = request.get_json()["list_completed"]
+        list = TodoList.query.get(list_id)
+        for todo in list.todos:
+            todo.completed = True
+
+        list.completed = completed
+        db.session.commit()
+    except:
+        db.session.rollback()
+    finally:
+        db.session.close()
+    if not error:
+        return jsonify({"success": True})
+    else:
+        abort(500)
+
+# delete list item
+@app.route("/lists/<listId>/delete", methods=["DELETE"])
+def delete_list(listId):
+    error = False
+    try:
+        list = TodoList.query.get(listId)
+        db.session.delete(list)
+        db.session.commit()
+    except:
+        error = True
+        db.session.rollback()
+    finally:
+        db.session.close()
+    if not error:
+        return jsonify({"success": True})
+    else:
+        abort(500)
 
 if __name__=="__main__":
     app.run(debug=True)
