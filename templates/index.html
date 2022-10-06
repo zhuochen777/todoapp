@@ -30,48 +30,67 @@
         font-size: 20px;
       }
 
-      .lists-wrapper, .todos-wrapper {
+      .lists-wrapper,
+      .todos-wrapper {
         display: inline-block;
         vertical-align: top;
+        margin: 20px;
       }
     </style>
   </head>
   <body>
+    <h3>A SAMPLE VERSION OF TODO APP</h3>
     <div class="lists-wrapper">
-        <ul id="lists">
+      <h4>TODO LISTS</h4>
+      <form action="/lists/create" method="POST" id="list-form">
+        <label for="todolist">Create List:</label>
+        <input type="text" name="todolist" id="todolist" />
+        <button type="submit">Create List</button>
+      </form>
+
+      <ul id="lists">
         {% for list in lists %}
         <li>
-            <a href="/lists/{{ list.id }}">{{ list.name }}</a>
+          <a href="/lists/{{ list.id }}">{{ list.name }}</a>
         </li>
         {% endfor %}
-        </ul>
+      </ul>
     </div>
 
     <div class="todos-wrapper">
-        <h4>{{ active_list.name }}</h4>
-        <form id="form">
-        <!-- create action made to todos table -->
+      <h4>{{ active_list.name }}</h4>
+      <form id="form">
+        <input type="hidden" id="list_id" value="{{ active_list.id }}" />
         <input type="text" name="description" id="description" />
-        <input type="submit" name="Create" />
-        </form>
-        <div id="error" class="hidden">Something went wrong</div>
-        <ul id="todos">
+        <button type="submit">Create Todo</button>
+      </form>
+      <div id="error" class="hidden">Something went wrong</div>
+      <ul id="todos">
         {% for todo in todos %}
         <li>
-            <input
+          <input
             class="check-completed"
             data-id="{{ todo.id }}"
             type="checkbox"
-            {% if todo.completed %} checked {% endif %}
-            />
-            {{ todo.description }}
-            <button class="delete-btn" data-id="{{ todo.id}}">&cross;</button>
+            {%
+            if
+            todo.completed
+            %}
+            checked
+            {%
+            endif
+            %}
+          />
+          {{ todo.description }}
+          <button class="delete-btn" data-id="{{ todo.id}}">&cross;</button>
         </li>
         {% endfor %}
         <!-- value of data-id can be found in event.target.dataset["id"] -->
-        </ul>
+      </ul>
     </div>
+
     <script>
+      // delete todo item
       const deleteButtons = document.getElementsByClassName("delete-btn");
       for (let i = 0; i < deleteButtons.length; i++) {
         const deleteButton = deleteButtons[i];
@@ -92,6 +111,7 @@
         };
       }
 
+      //   update completed item
       const checkboxes = document.getElementsByClassName("check-completed");
       for (let i = 0; i < checkboxes.length; i++) {
         const checkbox = checkboxes[i];
@@ -117,12 +137,14 @@
         };
       }
 
+      //   create todo item
       document.getElementById("form").onsubmit = function (event) {
         event.preventDefault();
         fetch("/todos/create", {
           method: "POST",
           body: JSON.stringify({
             description: document.getElementById("description").value,
+            list_id: document.getElementById("list_id").value,
           }),
           headers: {
             "Content-Type": "application/json",
@@ -137,8 +159,37 @@
             liItem.innerHTML = jsonResponse.description;
             document.getElementById("todos").appendChild(liItem);
             document.getElementById("error").className = "hidden";
+            window.location.reload(true);
           })
           .catch(function () {
+            document.getElementById("error").className = "";
+          });
+      };
+
+      //   create list item
+      document.getElementById("list-form").onsubmit = function (event) {
+        event.preventDefault();
+        fetch("/lists/create", {
+          method: "POST",
+          body: JSON.stringify({
+            name: document.getElementById("todolist").value,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+          .then(function (response) {
+            return response.json();
+          })
+          .then(function (jsonResponse) {
+            const liItem = document.createElement("LI");
+
+            liItem.innerHTML = jsonResponse.name;
+            document.getElementById("lists").appendChild(liItem);
+            document.getElementById("error").className = "hidden";
+            window.location.reload(true);
+          })
+          .catch(function (err) {
             document.getElementById("error").className = "";
           });
       };
