@@ -1,125 +1,147 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ToDo App</title>
     <style>
-        .hidden {
-            display: none;
-        }
+      .hidden {
+        display: none;
+      }
 
-        ul {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            width: 200px;
-        }
+      ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        width: 300px;
+      }
 
-        li {
-            clear: right;
-        }
+      li {
+        clear: right;
+      }
 
-        li button {
-            border: none;
-            color: red;
-            background-color: white;
-            float: right;
-            cursor: pointer;
-            font-size: 20px;
-        }
+      li button {
+        border: none;
+        color: red;
+        background-color: white;
+        float: right;
+        cursor: pointer;
+        font-size: 20px;
+      }
+
+      .lists-wrapper, .todos-wrapper {
+        display: inline-block;
+        vertical-align: top;
+      }
     </style>
-</head>
-<body>
-    <form id="form">
-        <!-- create action made to todos table -->
-        <input type="text" name="description" id="description">
-        <input type="submit" name="Create">
-    </form>
-    <div id="error" class="hidden">Something went wrong</div>
-    <ul id="todos">
-        {% for d in data: %}
+  </head>
+  <body>
+    <div class="lists-wrapper">
+        <ul id="lists">
+        {% for list in lists %}
         <li>
-            <input class="check-completed" data-id="{{ d.id }}" type="checkbox" {% if d.completed %} checked {% endif %}>
-            {{ d.description }}
-            <button class="delete-btn" data-id="{{ d.id}}">&cross;</button>
+            <a href="/lists/{{ list.id }}">{{ list.name }}</a>
+        </li>
+        {% endfor %}
+        </ul>
+    </div>
+
+    <div class="todos-wrapper">
+        <h4>{{ active_list.name }}</h4>
+        <form id="form">
+        <!-- create action made to todos table -->
+        <input type="text" name="description" id="description" />
+        <input type="submit" name="Create" />
+        </form>
+        <div id="error" class="hidden">Something went wrong</div>
+        <ul id="todos">
+        {% for todo in todos %}
+        <li>
+            <input
+            class="check-completed"
+            data-id="{{ todo.id }}"
+            type="checkbox"
+            {% if todo.completed %} checked {% endif %}
+            />
+            {{ todo.description }}
+            <button class="delete-btn" data-id="{{ todo.id}}">&cross;</button>
         </li>
         {% endfor %}
         <!-- value of data-id can be found in event.target.dataset["id"] -->
-    </ul>
+        </ul>
+    </div>
     <script>
-        const deleteButtons = document.getElementsByClassName("delete-btn");
-        for (let i = 0; i < deleteButtons.length; i++) {
-            const deleteButton = deleteButtons[i];
-            deleteButton.onclick = function(event) {
-                console.log("event", event);
-                const todoId = event.target.dataset["id"];
-                fetch("/todos/" + todoId + "/delete", {
-                    method: "DELETE"
-                })
-                .then(function() {
-                    const item = event.target.parentElement;
-                    item.remove();
-                    document.getElementById("error").className = "hidden";
-                })
-                .catch(function() {
-                    document.getElementById("error").className = "";
-                });
-            }
-        }
-
-
-        const checkboxes = document.getElementsByClassName("check-completed");
-        for (let i = 0; i < checkboxes.length; i++) {
-            const checkbox = checkboxes[i];
-            checkbox.onchange = function(event) {
-                console.log("event", event);
-                const newCompleted = event.target.checked;
-                const todoId = event.target.dataset["id"];
-                fetch("/todos/" + todoId + "/set-completed", {
-                    method: "POST",
-                    body: JSON.stringify({
-                        "completed": newCompleted
-                    }),
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
-                })
-                .then(function() {
-                    document.getElementById("error").className = "hidden";
-                })
-                .catch(function() {
-                    document.getElementById("error").className = "";
-                });
-            }
-        }
-
-        document.getElementById("form").onsubmit = function(event) {
-            event.preventDefault();
-            fetch("/todos/create", {
-                method: "POST",
-                body: JSON.stringify({
-                    "description": document.getElementById("description").value
-                }),
-                headers: {
-                    "Content-Type": "application/json"
-                }
+      const deleteButtons = document.getElementsByClassName("delete-btn");
+      for (let i = 0; i < deleteButtons.length; i++) {
+        const deleteButton = deleteButtons[i];
+        deleteButton.onclick = function (event) {
+          console.log("event", event);
+          const todoId = event.target.dataset["id"];
+          fetch("/todos/" + todoId + "/delete", {
+            method: "DELETE",
+          })
+            .then(function () {
+              const item = event.target.parentElement;
+              item.remove();
+              document.getElementById("error").className = "hidden";
             })
-            .then(function(response) {
-                return response.json();
-            })
-            .then(function(jsonResponse) {
-                console.log(jsonResponse);
-                const liItem = document.createElement("LI");
-                liItem.innerHTML = jsonResponse.description;
-                document.getElementById("todos").appendChild(liItem);
-                document.getElementById("error").className = "hidden";
-            })
-            .catch(function() {
-                document.getElementById("error").className = "";
+            .catch(function () {
+              document.getElementById("error").className = "";
             });
-        }
+        };
+      }
+
+      const checkboxes = document.getElementsByClassName("check-completed");
+      for (let i = 0; i < checkboxes.length; i++) {
+        const checkbox = checkboxes[i];
+        checkbox.onchange = function (event) {
+          console.log("event", event);
+          const newCompleted = event.target.checked;
+          const todoId = event.target.dataset["id"];
+          fetch("/todos/" + todoId + "/set-completed", {
+            method: "POST",
+            body: JSON.stringify({
+              completed: newCompleted,
+            }),
+            headers: {
+              "Content-Type": "application/json",
+            },
+          })
+            .then(function () {
+              document.getElementById("error").className = "hidden";
+            })
+            .catch(function () {
+              document.getElementById("error").className = "";
+            });
+        };
+      }
+
+      document.getElementById("form").onsubmit = function (event) {
+        event.preventDefault();
+        fetch("/todos/create", {
+          method: "POST",
+          body: JSON.stringify({
+            description: document.getElementById("description").value,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+          .then(function (response) {
+            return response.json();
+          })
+          .then(function (jsonResponse) {
+            console.log(jsonResponse);
+            const liItem = document.createElement("LI");
+            liItem.innerHTML = jsonResponse.description;
+            document.getElementById("todos").appendChild(liItem);
+            document.getElementById("error").className = "hidden";
+          })
+          .catch(function () {
+            document.getElementById("error").className = "";
+          });
+      };
     </script>
-</body>
+  </body>
 </html>
